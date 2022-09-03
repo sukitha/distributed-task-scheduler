@@ -9,27 +9,27 @@ const taskScheduler = new TaskScheduler();
 const taskWorker = new TaskWorker();
 
 const server = createServer({
-    name: "DistributedWorker",
-    version: ["1.0.0"]
+  name: "DistributedWorker",
+  version: ["1.0.0"]
 });
 
 server.use(
-    plugins.bodyParser({
-        mapParams: true
-    })
+  plugins.bodyParser({
+    mapParams: true
+  })
 );
 
 server.listen(config.get("port"), function () {
-    console.log(`${server.name} listening at ${server.url}`);
+  console.log(`${server.name} listening at ${server.url}`);
 });
 
 console.log(`Service started on ${config.get("port")}`);
 
 server.post(
-    "/tasks/:queue",
-    plugins.conditionalHandler([
-        { version: "1.0.0", handler: taskAPi.SaveTask }
-    ])
+  "/tasks/:queue",
+  plugins.conditionalHandler([
+    { version: "1.0.0", handler: taskAPi.SaveTask }
+  ])
 );
 
 
