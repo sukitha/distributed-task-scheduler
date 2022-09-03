@@ -38,7 +38,6 @@ class TaskScheduler {
             } catch (ex) {
                 // error in acquiring or releasing the lock
             }
-
             await new Promise(r => setTimeout(r, 100));
 
         }

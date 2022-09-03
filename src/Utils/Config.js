@@ -17,7 +17,7 @@ let config = convict({
     port: {
         doc: "The port to bind.",
         format: "port",
-        default: 8080,
+        default: 80,
         env: "PORT",
         arg: "port",
     },
@@ -35,8 +35,8 @@ let config = convict({
             doc: "The redis ip to connect.",
             format: "*",
             default: "127.0.0.1",
-            env: "REDIS_IP",
-            arg: "redis_ip",
+            env: "REDIS_HOST",
+            arg: "redis_host",
         },
 
         auth: {
@@ -58,8 +58,8 @@ let config = convict({
 });
 
 const env = config.get("env");
-const confPath = path.join(process.cwd(), `./config/${env}.json`);
-config.loadFile(confPath);
+// const confPath = path.join(process.cwd(), `./config/${env}.json`);
+// config.loadFile(confPath);
 config.validate({ allowed: "strict" });
 
 module.exports.config = config;

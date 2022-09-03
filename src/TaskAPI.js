@@ -19,7 +19,7 @@ class TaskAPI {
             status = 'SCHEDULED';
 
         } else {
-            console.log(`Push task ${id} to execute in relatime`);
+            console.log(`Push task ${id} to execute in realtime`);
             await redisHandler.AddItemToQueue(queue, JSON.stringify(item));
             status = 'QUEUED';
         }

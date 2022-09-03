@@ -1,0 +1,29 @@
+version: "3"
+services:
+  scheduler:
+    image: scheduler:local
+    environment:
+      APP_PORT: 80
+      # NODE_ENV: production
+      MONGO_DB_URL: mongodb://scheduler-mongodb/scheduler
+      LOGGER_CONFIG: '{ "disableClustering": true, "appenders": { "out": { "type": "stdout" } }, "categories": { "default": { "appenders": ["out"], "level": "trace" } } }'
+      APP_BASE_URI: http://lvh.me
+      API_PREFIX: api/scheduler
+      REDIS_HOST: scheduler-redis
+      REDIS_PORT: 6379
+    ports:
+      - 80:80
+      - 5858:5858
+    volumes:
+      - scheduler-node-modules-volume:/app/node_modules
+      - ./src:/app/src
+    deploy:
+      replicas: 1
+
+  scheduler-redis:
+    image: redis:6.2.1-alpine
+    ports:
+      - 6379:6379
+
+volumes:
+  scheduler-node-modules-volume:

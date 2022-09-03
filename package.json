@@ -4,7 +4,9 @@
   "description": "Distributed task scheduler in redis",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node src/index.js",
+    "inst": "npm i",
+    "test": "echo \"Error: no test specified\" && exit 0"
   },
   "repository": {
     "type": "git",
