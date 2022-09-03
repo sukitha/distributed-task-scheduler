@@ -14,7 +14,3 @@ package-lock.json
 logs/
 backup.*
 /lib
-assets/*
-!assets/.gitkeep
-src/scripts/*.csv
-!src/scripts/shops.csv
