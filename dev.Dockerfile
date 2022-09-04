@@ -6,8 +6,8 @@ LABEL authors="Zaid <zaid@beanz.ae>"
 RUN mkdir /app
 WORKDIR /app
 
-COPY ["./package.json", "debug.sh", "./"]
-# COPY ["./src/tsconfig.json", "./src/tsconfig.json"]
+COPY ["./package.json", ".eslintrc.json", "debug.sh", "./"]
+COPY ["./src/tsconfig.json", "./src/tsconfig.json"]
 EXPOSE  80
 EXPOSE 5858
 

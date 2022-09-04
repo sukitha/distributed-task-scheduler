@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "tsc-watch",
+      "command": "npm",
+      "args": [
+        "run",
+        "watch"
+      ],
+      "type": "shell",
+      "isBackground": true,
+      "group": "build",
+      "problemMatcher": "$tsc-watch",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "docker",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ]
+}
