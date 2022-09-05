@@ -37,7 +37,6 @@ const stopables: { stop: () => Promise<void> }[] = [];
   app.use(tasksRoute().mount(path.join('/', config.apiPrefix, '/tasks')));
 
   taskManager.processEvents();
-  taskManager.processTasks();
 
   stopables.push(
     await R.startAll(),

@@ -16,17 +16,10 @@ class TasksManager {
     const item = [id, config.queueKey, task];
     let score = 0;
     let status = 'PENDING';
-    if (when) {
-      score = new Date(when).getTime()
-      console.log(`Push task ${id} to process later on ${when} `);
-      await this.redis.AddToSortedSet(JSON.stringify(item), score);
-      status = 'SCHEDULED';
-
-    } else {
-      console.log(`Push task ${id} to execute in realtime`);
-      await this.redis.AddItemToQueue(config.queueKey, JSON.stringify(item));
-      status = 'QUEUED';
-    }
+    score = new Date(when).getTime()
+    console.log(`Push task ${id} to process later on ${when} `);
+    await this.redis.AddToSortedSet(JSON.stringify(item), score);
+    status = 'SCHEDULED';
     // await this.streams.scheduler.schedulerTaskCreated({
     //   id,
     //   exceutionTime: when,
@@ -46,17 +39,18 @@ class TasksManager {
             const item = JSON.parse(value[0]);
             const when = parseFloat(value[1]);
             if (when <= Date.now()) {
-              console.log(`Scheduled item ${item[0]} ready to process`);
-              console.log(item);
+              const task = item[2] as Task;
+              console.log(`Scheduled event ${task.event.name} ready to process for stream ${task.stream}`);
+              if (task.type === 'publish_event') {
+                await this.redis.publishEvent(task.stream, task.event);
+              }
               await this.redis.DeleteItemFromSet(value[0]);
-              await this.redis.AddItemToQueue(item[1], value[0]);
             }
           } else {
             //No items to work process wait 1s before check again
             await this.redis.lock.release();
             await new Promise(r => setTimeout(r, 1000));
             continue;
-
           }
         } catch (ex: any) {
           console.log(`Error on event processing ${ex.message}`);
@@ -69,23 +63,6 @@ class TasksManager {
       await new Promise(r => setTimeout(r, 100));
 
     }
-  }
-
-
-  async processTasks() {
-    while (true) {
-      const taskArray = await this.redis.GetItemFromQueueBlocking(config.queueKey);
-      console.log({ taskArray });
-      if (taskArray && taskArray.length > 1) {
-        const task = JSON.parse(taskArray[1]);
-        if (task && Array.isArray(task) && task.length > 2) {
-          const item: Task = task[2];
-          console.log({ item });
-          if (item.type === 'publish_event') await this.redis.publishEvent(item.stream, item.event);
-        }
-      }
-    }
-
   }
 }
 

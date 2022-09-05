@@ -63,58 +63,6 @@ export class RedisHandler {
     })
   }
 
-  async AddItemToQueue(key, item) {
-    return new Promise((resolve, reject) => {
-      this.client.rpush(`QUEUE:${key}`, item, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      })
-    })
-  }
-
-  async PopQueue(key) {
-    return new Promise((resolve, reject) => {
-      this.client.rpop(`QUEUE:${key}`, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      })
-    })
-  }
-
-  async GetItemFromQueue(key, item) {
-    return new Promise((resolve, reject) => {
-
-      this.client.lpop(`QUEUE:${key}`, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      })
-    })
-  }
-
-  async GetItemFromQueueBlocking(key): Promise<[string, string] | null | undefined> {
-    return new Promise((resolve, reject) => {
-
-      this.blockingClient.blpop(`QUEUE:${key}`, 5000, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      })
-    })
-  }
-
-
-
 
 
   //item = conn.zrange('delayed:', 0, 0, withscores = True)

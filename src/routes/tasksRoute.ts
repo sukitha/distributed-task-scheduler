@@ -1,6 +1,6 @@
 import KoaRoute from 'koa-tree-router';
 import Koa from 'koa';
-import { TasksController } from '../controllers/tasksController';
+import { TasksController } from '../controllers/TasksController';
 import { taskManager } from '../services/TasksManager';
 
 export default () => {
