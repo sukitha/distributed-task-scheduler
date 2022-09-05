@@ -20,14 +20,8 @@ class TasksManager {
     console.log(`Push task ${id} to process later on ${when} `);
     await this.redis.AddToSortedSet(JSON.stringify(item), score);
     status = 'SCHEDULED';
-    // await this.streams.scheduler.schedulerTaskCreated({
-    //   id,
-    //   exceutionTime: when,
-    //   task
-    // });
     return ({ item, score, status });
   }
-
 
   async processEvents() {
     while (true) {
@@ -39,12 +33,16 @@ class TasksManager {
             const item = JSON.parse(value[0]);
             const when = parseFloat(value[1]);
             if (when <= Date.now()) {
-              const task = item[2] as Task;
+              const task: Task = item[2];
               console.log(`Scheduled event ${task.event.name} ready to process for stream ${task.stream}`);
+
+              const commands: string[][] = [['zrem', 'ZSET:SCHEDULED:ITEMS', value[0]]];
               if (task.type === 'publish_event') {
-                await this.redis.publishEvent(task.stream, task.event);
+                commands.push(['xadd', task.stream, '*', task.event.name, JSON.stringify(task.event)]);
+              } else {
+                // do something else if not publish_event
               }
-              await this.redis.DeleteItemFromSet(value[0]);
+              await this.redis.transaction(commands);
             }
           } else {
             //No items to work process wait 1s before check again
