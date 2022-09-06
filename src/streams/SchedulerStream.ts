@@ -15,7 +15,6 @@ const setup = (streams = R) => {
     logger.trace(JSON.stringify(event));
     const valueParsed = event.data;
     await taskManager.saveTask(valueParsed.when, valueParsed.task);
-    //
   });
 
   return stream.consume();

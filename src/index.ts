@@ -19,7 +19,6 @@ const serverStatus = {
 };
 let server: import('http').Server;
 
-
 const stopables: { stop: () => Promise<void> }[] = [];
 
 (async () => {
