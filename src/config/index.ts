@@ -1,13 +1,14 @@
 export const config: {
   port: number;
   production: boolean;
+  mongoDbUrl: string;
   apiPrefix: string;
   redisHost: string;
   redisPort: number;
   logLevel: string;
   nodeName: string;
   appBaseUri: string;
-  queueKey: string;
+  completedTasksTtl: number;
 } = <any>{
   port: 80,
   production: false,
@@ -16,13 +17,16 @@ export const config: {
   logLevel: 'trace',
   nodeName: 'scheduler-0',
   irpUri: 'http://irp/api/users',
-  queueKey: 'tasks_queue'
+  completedTasksTtl: 60 * 60 * 24 * 30 // 30 days
 };
 if (typeof process.env.APP_PORT !== 'undefined') {
   config.port = parseInt(process.env.APP_PORT);
 }
 if (typeof process.env.NODE_ENV !== 'undefined') {
   config.production = process.env.NODE_ENV === 'production';
+}
+if (typeof process.env.MONGO_DB_URL !== 'undefined') {
+  config.mongoDbUrl = process.env.MONGO_DB_URL;
 }
 
 if (typeof process.env.APP_BASE_URI !== 'undefined') {
@@ -47,6 +51,10 @@ if (typeof process.env.NODE_NAME !== 'undefined') {
 console.info('Config for the app: %o', config);
 
 let shouldExit = false;
+if (!config.mongoDbUrl || config.mongoDbUrl === '') {
+  console.error('Missing parameter: MONGO_DB_URL Exiting...');
+  shouldExit = true;
+}
 if (!config.redisHost || config.redisHost === '') {
   console.error('Missing parameter: REDIS_HOST Exiting...');
   shouldExit = true;

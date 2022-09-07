@@ -1,7 +1,7 @@
 import KoaRoute from 'koa-tree-router';
 import Koa from 'koa';
 import { TasksController } from '../controllers/TasksController';
-import { taskManager } from '../services/TasksManager';
+import { getTasksManager } from '../services/TasksManager';
 
 export default () => {
 
@@ -16,6 +16,6 @@ export default () => {
 };
 
 const getTasksController = (ctx: Koa.Context) => {
-  const controller = new TasksController(taskManager);
+  const controller = new TasksController(getTasksManager(ctx.uow));
   return controller;
 };

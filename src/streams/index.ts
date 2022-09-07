@@ -14,9 +14,7 @@ const create = () => {
   const group = streams.group('scheduler');
 
   return {
-
     scheduler: group.stream('scheduler_events').with(events.scheduler),
-
     startAll: async () => {
       const all = await Promise.all([
         startSchedulerStream(),

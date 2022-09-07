@@ -1,28 +1,47 @@
 import { event, IEvent } from 'ioredis-streams';
+import { TaskStatus } from '../../models/ITask';
 
 export enum SchedulerEvents {
-  createSchedulerTask = 'createSchedulerTask',
-  schedulerTaskCreated = 'schedulerTaskCreated', //ack
+  scheduleTask = 'scheduleTask',
+  loadTasks = 'loadTasks',
+  cancelTask = 'cancelTask',
+  completeTask = 'completeTask',
+  failTask = 'failTask'
 }
 
-export type Task = {
+
+export type IScheduledEvent<T = any> = IEvent<T> & { from?: { source: string; taskId?: string; } };
+
+export type Task<T = any> = {
   type: 'publish_event' | 'api_call'; //TODO 
-  stream: string; // stream name
-  event: IEvent<any>;
+  stream: string;
+  event: IScheduledEvent<T>;
 }
 
 export type ScheduleTaskData = {
+  id: string;
   when: number;
   task: Task;
 };
 
-export type ScheduleTaskAckData = {
+
+export type LoadTasksData = {
+  from: number;
+  to: number;
+}
+
+type UpdateTaskStatusData<T> = {
   id: string;
-  exceutionTime: number;
-  task: Task;
-};
+  status: T;
+}
 
 export const scheduler = {
-  ...event(SchedulerEvents.createSchedulerTask).of<ScheduleTaskData>(),
-  ...event(SchedulerEvents.schedulerTaskCreated).of<ScheduleTaskAckData>(),
+  ...event(SchedulerEvents.scheduleTask).of<ScheduleTaskData>(),
+  ...event(SchedulerEvents.loadTasks).of<LoadTasksData>(),
+  ...event(SchedulerEvents.cancelTask).of<UpdateTaskStatusData<TaskStatus.canceled>>(),
+  ...event(SchedulerEvents.completeTask).of<UpdateTaskStatusData<TaskStatus.completed>>(),
+  ...event(SchedulerEvents.failTask).of<UpdateTaskStatusData<TaskStatus.failed>>(),
+
 }
+
+// const ev = ["123123", "1662496627864", { "type": "publish_event", "stream": "stream123", "event": { "time": 1231231, "name": "someevent", "v": "1.0.0", "data": { "hello": 123 } } }]

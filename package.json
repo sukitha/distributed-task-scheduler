@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Distributed task scheduler in redis",
   "type": "commonjs",
+  "author": "zaid@beanz.ae",
   "maintainers": [
-    "anas.kutaiba@gmail.com",
-    "zaid@beanz.ae"
+    "anas@bean.ae"
   ],
   "scripts": {
     "inst": "npm i",
@@ -19,27 +19,20 @@
     "type-check": "./node_modules/.bin/tsc --noEmit",
     "watch": "./node_modules/.bin/tsc -w -p ./src"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sukitha/distributed-task-scheduler.git"
-  },
-  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sukitha/distributed-task-scheduler/issues"
-  },
-  "homepage": "https://github.com/sukitha/distributed-task-scheduler#readme",
   "dependencies": {
     "continuation-local-storage": "^3.2.1",
     "fastest-validator": "^1.15.0",
     "ioredis": "^4.0.0",
-    "ioredis-lock": "^4.0.0",
     "ioredis-streams": "^0.0.9",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.12.0",
     "koa-body": "^5.0.0",
     "koa-tree-router": "^0.6.0",
     "log4js": "^6.6.1",
+    "mongo-unit-of-work": "^2.1.1",
+    "mongodb": "^4.9.1",
+    "nanoid": "^4.0.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

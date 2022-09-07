@@ -1,5 +1,6 @@
 import { R } from './streams';
-import { taskManager } from './services/TasksManager';
+import { MongoClient } from 'mongodb';
+import { startTasksManager } from './services/TasksManager';
 import Koa from 'koa';
 import koaBody from 'koa-body';
 import { errorHandler, healthCheckHandler } from './utils/middlewares';
@@ -8,6 +9,8 @@ import { config } from './config';
 import loggerFactory from './utils/logging';
 import tasksRoute from './routes/tasksRoute';
 import path from 'path';
+import { getUnitOfWorkHandler } from './utils/middlewares/unitOfWorkHandler';
+import { getDbClient } from './utils/getDbClient';
 
 const logger = loggerFactory.getLogger('Index');
 
@@ -17,6 +20,7 @@ const serverStatus = {
   ready: false,
   live: false
 };
+let dbClient: MongoClient;
 let server: import('http').Server;
 
 const stopables: { stop: () => Promise<void> }[] = [];
@@ -32,13 +36,13 @@ const stopables: { stop: () => Promise<void> }[] = [];
 
   // Body Parser ...
   app.use(koaBody());
+  app.use(getUnitOfWorkHandler());
 
   app.use(tasksRoute().mount(path.join('/', config.apiPrefix, '/tasks')));
-
-  taskManager.processEvents();
-
+  dbClient = await getDbClient();
   stopables.push(
     await R.startAll(),
+    await startTasksManager()
   );
 
   server = app.listen(config.port, () => {
@@ -62,7 +66,7 @@ function teardown(signalText: string, signal?: NodeJS.Signals) {
       if (err) {
         console.error('teardown: (server close error):', JSON.stringify(err));
       }
-      if (stopables) await Promise.all(stopables.map(s => s.stop()))
+      if (stopables) await Promise.all(stopables.map(s => s.stop()));
       if (err) {
         console.error('teardown: (server close error):', JSON.stringify(err));
         process.exit(2);

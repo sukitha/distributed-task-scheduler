@@ -1,19 +1,18 @@
 import 'koa-body';
 import { Context } from 'koa';
 import loggerFactory from '../utils/logging';
-import { taskManager } from '../services/TasksManager';
+import { TasksManager } from '../services/TasksManager';
 
 const logger = loggerFactory.getLogger('TasksController');
 
 export class TasksController {
 
-  constructor(protected service: typeof taskManager) {
+  constructor(protected service: TasksManager) {
   }
 
   async add(ctx: Context) {
     const { body } = ctx.request;
-    const { when, task } = body;
-    const result = await this.service.saveTask(when, task);
+    const result = await this.service.scheduleTask(body);
     ctx.body = result;
     ctx.status = 200;
     ctx.type = 'json';
