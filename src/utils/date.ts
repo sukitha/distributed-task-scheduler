@@ -1,6 +1,6 @@
 export const isToday = (dateMs: number) => {
   const today = new Date();
-  return new Date(dateMs).setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0);
+  return new Date(dateMs).setHours(0, 0, 0, 0) === today.setHours(0, 0, 0, 0);
 }
 
 

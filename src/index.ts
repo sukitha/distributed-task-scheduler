@@ -13,7 +13,6 @@ import { getUnitOfWorkHandler } from './utils/middlewares/unitOfWorkHandler';
 import { getDbClient } from './utils/getDbClient';
 
 const logger = loggerFactory.getLogger('Index');
-
 logger.trace('Started ...');
 const app = new Koa();
 const serverStatus = {
@@ -39,15 +38,16 @@ const stopables: { stop: () => Promise<void> }[] = [];
   app.use(getUnitOfWorkHandler());
 
   app.use(tasksRoute().mount(path.join('/', config.apiPrefix, '/tasks')));
+
+  server = app.listen(config.port, () => {
+    console.info(`application is listening on port ${config.port} ...`);
+  });
+
   dbClient = await getDbClient();
   stopables.push(
     await R.startAll(),
     await startTasksManager()
   );
-
-  server = app.listen(config.port, () => {
-    console.info(`application is listening on port ${config.port} ...`);
-  });
 
   serverStatus.ready = true;
   serverStatus.live = true;

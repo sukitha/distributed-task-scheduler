@@ -43,5 +43,3 @@ export const scheduler = {
   ...event(SchedulerEvents.failTask).of<UpdateTaskStatusData<TaskStatus.failed>>(),
 
 }
-
-// const ev = ["123123", "1662496627864", { "type": "publish_event", "stream": "stream123", "event": { "time": 1231231, "name": "someevent", "v": "1.0.0", "data": { "hello": 123 } } }]

@@ -81,5 +81,22 @@ export const startSchedulerStream = async (streams = R) => {
 };
 
 
-// mock event
-// XADD scheduler_events MAXLEN ~ 100000 * createSchedulerTask '{"data":{"when": 1662314479009, "task": { "stream": "invoices_events", "type": "publish_event", "event": {"name": "some event","v": "1.0.0", "data": { "hi": 1 }}} }}'
+/*
+events
+
+schedule a task
+XADD scheduler_events * scheduleTask '{"data":{"id": "123", "when": 1662589999898, "task": { "stream": "invoices_events", "type": "publish_event", "event": {"name": "some event","v": "1.0.0", "data": { "hi": 1 }}} }}'
+
+update status (complete)
+XADD scheduler_events * completeTask '{"data":{"id": "123", "status": "completed" }}'
+
+update status (cancel)
+XADD scheduler_events * completeTask '{"data":{"id": "123", "status": "canceled" }}'
+
+update status (fail)
+XADD scheduler_events * completeTask '{"data":{"id": "123", "status": "failed" }}'
+
+load tasks
+XADD scheduler_events * loadTasks '{"data":{"from": "1662589999898", "to": "1662589999898" }}'
+
+*/
