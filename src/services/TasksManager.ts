@@ -49,6 +49,7 @@ export class TasksManager {
       when: { $gte: new Date(from), $lte: new Date(to) }
     });
     if (!tasks?.length) return;
+    logger.info('loaded tasks', JSON.stringify(tasks));
     await this.redis.addManyTasks(tasks.map(t => ({ when: new Date(t.when).getTime(), id: t._id, task: t.data })));
     const { length } = tasks;
     logger.info(`scheduled ${length} task${length > 1 ? 's' : ''}`);
@@ -89,7 +90,7 @@ export class TasksManager {
       try {
         const item = await this.redis.getTopItem();
         if (!item || item.when > Date.now()) {
-          await sleep(3000);
+          await sleep(1000);
           continue;
         }
 
@@ -107,7 +108,7 @@ export class TasksManager {
         }
       } catch (ex: any) {
         logger.error(`Error on task processing ${JSON.stringify(ex)}`);
-        await sleep(3000);
+        await sleep(1000);
       }
     }
   }
