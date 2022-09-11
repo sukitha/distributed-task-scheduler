@@ -44,11 +44,16 @@ export class TasksManager {
   async loadTasks(from: number, to: number) {
     logger.info('loadTasks', JSON.stringify({ from, to }));
     const tasks = await this.tasksRepo.findMany({
-      _id: { $nin: ['load_tasks_now', 'load_tasks_next_day'] },
+      _id: { $ne: 'load_tasks_now' },
       status: TaskStatus.scheduled,
       when: { $gte: new Date(from), $lte: new Date(to) }
     });
     if (!tasks?.length) return;
+
+    const nextDayKey = 'load_tasks_next_day';
+    const nextDay = tasks.find(t => t._id === nextDayKey);
+    if (nextDay) await this.tasksRepo.updateToNextDay(nextDay._id, nextDay.when.getTime());
+
     logger.info('loaded tasks', JSON.stringify(tasks));
     await this.redis.addManyTasks(tasks.map(t => ({ when: new Date(t.when).getTime(), id: t._id, task: t.data })));
     const { length } = tasks;
