@@ -11,6 +11,7 @@ export interface ITask extends IAuditable {
 
 export enum TaskStatus {
   scheduled = 'scheduled',
+  processed = 'processed',
   completed = 'completed',
   canceled = 'canceled',
   failed = 'failed'

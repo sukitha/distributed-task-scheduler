@@ -15,7 +15,7 @@ const redisLuaCommands: { [name in CommandName]: { numberOfKeys: number, lua: st
     numberOfKeys: 2,
     lua: `
       local item, task
-      item = redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES', 'REV')
+      item = redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES')
       if (item == nil or next(item) == nil) then
         return nil
       end
@@ -34,6 +34,7 @@ export class RedisHandler {
   ) {
     this.client = getNewRedisClient({ host: config.redisHost, port: config.redisPort });
 
+
     for (const name of Object.keys(redisLuaCommands)) {
       const { lua, numberOfKeys } = redisLuaCommands[name];
       this.client.defineCommand(name, { numberOfKeys, lua });
@@ -49,7 +50,7 @@ export class RedisHandler {
   private async transaction(commands: string[][]) {
     const result: any = await new Promise((resolve, reject) => {
       this.client.multi(commands).exec((err, result) => {
-        logger.info('transaction', JSON.stringify({ err, result }));
+        // logger.info('transaction', JSON.stringify({ err, result }));
         if (err) reject(err);
         else resolve(result);
       })
@@ -71,7 +72,6 @@ export class RedisHandler {
 
 
     if (!result || !result.length) return null;
-    logger.info('getTopItem', JSON.stringify(result));
 
     const data: [string, string, string] = result;
 

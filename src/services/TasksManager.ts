@@ -1,21 +1,24 @@
 import { redisHandler, RedisHandler } from '../utils/redis/RedisHandler';
-import { SchedulerEvents, ScheduleTaskData, Task } from '../streams/events/scheduler';
+import { SchedulerEvents, Task } from '../streams/events/scheduler';
 import { sleep } from '../utils/sleep';
 import { unitOfWorkFactory } from '../utils/middlewares/unitOfWorkHandler';
 import { Repo } from '../repositories/RepoNames';
 import { TaskStatus } from '../models/ITask';
+
 import loggerFactory from '../utils/logging';
 import { getDayBoundariesMs, isToday } from '../utils/date';
 import { IUoW } from '../repositories/RepositoryFactory';
+import { InvalidRequestError } from '../exceptions';
 const logger = loggerFactory.getLogger('TasksManager');
 
-const eventTypeMap = (redis: RedisHandler) => ({
-  publish_event: async (id: string, task: Task) => {
-    await redis.deleteTaskAndPublish(id, task)
-  }
-});
-
 export class TasksManager {
+  private handlers = {
+    publish_event: async (id: string, task: Task) => {
+      await this.redis.deleteTaskAndPublish(id, task);
+      await this.updateTaskStatus(id, TaskStatus.processed);
+    }
+  }
+
   private isDisposing = false;
 
   constructor(
@@ -33,6 +36,8 @@ export class TasksManager {
 
   async scheduleTask(data: { id: string, when: number, task: Task }) {
     const { id, when, task } = data;
+    if (!id) throw new InvalidRequestError('id is not provided');
+    if (typeof when !== 'number') throw new InvalidRequestError('when is not provided');
     const isApplicable = isToday(when);
     logger.info('scheduleTask', JSON.stringify({ ...data, isApplicable }));
     const result = await this.tasksRepo.create(id, { data: task, status: TaskStatus.scheduled, when: new Date(when) });
@@ -44,7 +49,6 @@ export class TasksManager {
   async loadTasks(from: number, to: number) {
     logger.info('loadTasks', JSON.stringify({ from, to }));
     const tasks = await this.tasksRepo.findMany({
-      _id: { $ne: 'load_tasks_now' },
       status: TaskStatus.scheduled,
       when: { $gte: new Date(from), $lte: new Date(to) }
     });
@@ -71,26 +75,19 @@ export class TasksManager {
     const { id, executionTime, boundaries } = config;
     logger.info('scheduleLoadTasksOperation', JSON.stringify({ id, executionTime, boundaries }));
 
-    const getTask = (boundaries: { from: number, to: number }, when = executionTime): ScheduleTaskData => ({
-      when,
-      id,
-      task: {
-        type: 'publish_event',
-        stream: 'scheduler_events',
-        event: {
-          name: SchedulerEvents.loadTasks,
-          time: Date.now(),
-          v: '1.0.0',
-          data: boundaries,
-        }
+    await this.redis.addTask(id, executionTime, {
+      type: 'publish_event',
+      stream: 'scheduler_events',
+      event: {
+        name: SchedulerEvents.loadTasks,
+        time: Date.now(),
+        v: '1.0.0',
+        data: boundaries,
       }
-    })
-
-    await this.scheduleTask(getTask(boundaries));
+    });
   }
 
   async processTasks() {
-    const taskHandlers = eventTypeMap(this.redis);
     while (!this.isDisposing) {
       try {
         const item = await this.redis.getTopItem();
@@ -100,9 +97,8 @@ export class TasksManager {
         }
 
         const { id, task } = item;
-        logger.info(`processing task ${JSON.stringify(item)}`);
 
-        const handler = taskHandlers[task.type];
+        const handler = this.handlers[task.type];
         if (handler) await handler(id, task);
         else {
           logger.warn(`no handler for task: ${JSON.stringify(task)}`);
