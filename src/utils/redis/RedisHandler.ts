@@ -73,12 +73,10 @@ export class RedisHandler {
 
     if (!result || !result.length) return null;
 
-    const data: [string, string, string] = result;
-
     return <{ id: string, when: number, task: Task }>{
-      id: data[0],
-      when: parseInt(data[1]),
-      task: JSON.parse(data[2])
+      id: result[0],
+      when: parseInt(result[1]),
+      task: JSON.parse(result[2])
     };
   }
 

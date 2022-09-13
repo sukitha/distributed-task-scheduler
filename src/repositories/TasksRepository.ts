@@ -50,7 +50,7 @@ export class TasksRepository extends AuditableRepository<ITask> {
         }
       },
       { returnDocument: 'after' }
-    )
+    );
     return result;
   }
 
