@@ -26,7 +26,7 @@ RUN npm run build
 
 FROM base AS release
 COPY --from=dependencies /prod_node_modules ./node_modules
-# COPY --from=dependencies /app/dist ./dist
+COPY --from=dependencies /app/dist ./dist
 EXPOSE 80
 
 CMD ["node", "dist"]
