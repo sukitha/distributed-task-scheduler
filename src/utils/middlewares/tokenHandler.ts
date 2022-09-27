@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Context } from 'koa';
 import { createNamespace } from 'continuation-local-storage';
+import { IUserToken } from '../../models/IUserToken';
 
 const decode = (token) => {
   return new Promise((resolve, reject) => {
@@ -21,16 +22,23 @@ export const tokenHandler = async (ctx: Context, next) => {
   token = ctx.cookies.get('token') || token;
   token = (ctx.headers.authorization + '').split(' ')[1] || token;
   if ((!token || token === '') && next) return next();
-  const user = await decode(token).catch(err => undefined);
-  ctx.user = user;
+  const user = await decode(token).catch(err => undefined) as Partial<IUserToken>;
+  ctx.user = sanatizeToken(user);
 
   const context = usersNamespace.createContext();
-  // tslint:disable-next-line:no-string-literal
-  usersNamespace['enter'](context);
-  usersNamespace.set('token', user);
-  usersNamespace.set('correlationId', ctx.request.headers['correlation-id']);
-  await next();
-  // tslint:disable-next-line:no-string-literal
-  usersNamespace['exit'](context);
-
+  try {
+    // tslint:disable-next-line:no-string-literal
+    usersNamespace['enter'](context);
+    usersNamespace.set('token', ctx.user);
+    usersNamespace.set('correlationId', ctx.request.headers['correlation-id']);
+    await next();
+  } finally {
+    // tslint:disable-next-line:no-string-literal
+    usersNamespace['exit'](context);
+  }
 };
+
+export const sanatizeToken = (user: Partial<IUserToken>) => {
+  if (!user.roles || !(user.roles instanceof Array)) user.roles = [];
+  return user;
+}
