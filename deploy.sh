@@ -21,8 +21,7 @@ then
   echo "Waiting for volumes to be removed..."
   docker volume rm -f beanz_scheduler-mongodb-volume
   docker volume rm -f beanz_scheduler-redis-volume
-  docker volume rm -f beanz_scheduler-node-modules-volume
-  until [ -z "$(docker volume ls --filter name=^beanz_scheduler -q)" ]; do
+  until [ -z "$(docker volume ls --filter name=beanz_scheduler-redis-volume -q)" ] && [ -z "$(docker volume ls --filter name=beanz_scheduler-mongodb-volume -q)" ]; do
     sleep 1
   done
 fi

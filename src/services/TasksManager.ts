@@ -38,7 +38,7 @@ export class TasksManager {
     const { id, when, task } = data;
     if (!id) throw new InvalidRequestError('id is not provided');
     if (typeof when !== 'number') throw new InvalidRequestError('when is not provided');
-    const isApplicable = isToday(when);
+    const isApplicable = isToday(when) || when < Date.now();
     logger.info('scheduleTask', JSON.stringify({ ...data, isApplicable }));
     const result = await this.tasksRepo.create(id, { data: task, status: TaskStatus.scheduled, when: new Date(when) });
     if (isApplicable) await this.redis.addTask(id, when, task);
@@ -54,8 +54,7 @@ export class TasksManager {
     });
     if (!tasks?.length) return;
 
-    const nextDayKey = 'load_tasks_next_day';
-    const nextDay = tasks.find(t => t._id === nextDayKey);
+    const nextDay = tasks.find(t => t._id === 'load_tasks_next_day');
     if (nextDay) await this.tasksRepo.updateToNextDay(nextDay._id, nextDay.when.getTime());
 
     logger.info('loaded tasks', JSON.stringify(tasks));
