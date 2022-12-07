@@ -1,21 +1,44 @@
 
-import { getNamespace } from 'continuation-local-storage';
 import { IUserToken } from '../models/IUserToken';
 
-class CorrelationIDHelper {
+import { AsyncLocalStorage } from 'async_hooks';
+const asyncLocalStorage = new AsyncLocalStorage<{
+  correlationId?: string;
+  token?: IUserToken;
+  locale?: string;
+}>();
+class UserContext {
   getCorrelationId(): string | undefined {
-    const namespace = getNamespace('user');
-    return namespace && namespace.get('correlationId') || undefined;
+    return asyncLocalStorage.getStore()?.correlationId;
   }
-
   getUserToken(): IUserToken | undefined {
-    const namespace = getNamespace('user');
-    return namespace && namespace.get('token') || undefined;
+    return asyncLocalStorage.getStore()?.token
   }
-
-  getUserLocale(): string {
-    const namespace = getNamespace('user');
-    return namespace && namespace.get('locale') || 'en';
+  setUserToken(token: IUserToken) {
+    const store = asyncLocalStorage.getStore();
+    if (store) store.token = token;
+  }
+  setCorrelationId(correlationId: string) {
+    const store = asyncLocalStorage.getStore();
+    if (store) store.correlationId = correlationId;
+  }
+  getLocale(): string {
+    return asyncLocalStorage.getStore()?.locale || 'en';
+  }
+  setLocale(locale: string) {
+    const store = asyncLocalStorage.getStore();
+    if (store) store.locale = locale;
+  }
+  getErrorContext() {
+    const token = this.getUserToken();
+    return {
+      userId: token?.sub,
+      roles: token?.roles,
+      correlationId: this.getCorrelationId(),
+    }
+  }
+  getLocalStorage() {
+    return asyncLocalStorage;
   }
 }
-export default new CorrelationIDHelper();
+export default new UserContext();

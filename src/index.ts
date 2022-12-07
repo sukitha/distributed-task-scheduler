@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { startTasksManager } from './services/TasksManager';
 import Koa from 'koa';
 import koaBody from 'koa-body';
-import { errorHandler, healthCheckHandler } from './utils/middlewares';
+import { errorHandler, healthCheckHandler, tokenHandler } from './utils/middlewares';
 import { loggerHandler } from './utils/middlewares/loggerHandler';
 import { config } from './config';
 import loggerFactory from './utils/logging';
@@ -29,6 +29,9 @@ const stopables: { stop: () => Promise<void> }[] = [];
   app.proxy = true;
   app.use(healthCheckHandler(serverStatus));
   app.use(loggerHandler);
+
+  // Token Handler!
+  app.use(tokenHandler);
 
   // Error Handler!
   app.use(errorHandler);
