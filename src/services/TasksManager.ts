@@ -15,7 +15,7 @@ export class TasksManager {
   private handlers = {
     publish_event: async (id: string, task: Task) => {
       await this.redis.deleteTaskAndPublish(id, task);
-      await this.updateTaskStatus(id, TaskStatus.processed);
+      if (id !== 'load_tasks_next_day') await this.updateTaskStatus(id, TaskStatus.processed);
     }
   }
 
