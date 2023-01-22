@@ -61,7 +61,7 @@ export class TasksManager {
       const nextDayBoundaries = getDayBoundariesMs({ daysOffset: 1, baseDateMs: new Date(nextDayTask.when).getTime() });
       const when = new Date(nextDayBoundaries.from);
 
-      tasks.push({
+      tasks[nextDayTaskIdx] = {
         status: TaskStatus.scheduled,
         _id: nextDayTask._id,
         when,
@@ -75,9 +75,7 @@ export class TasksManager {
             data: nextDayBoundaries,
           }
         }
-      });
-
-      tasks[nextDayTaskIdx]._id = generateId();
+      }
     }
     logger.info('loaded tasks', JSON.stringify(tasks));
     await this.redis.addManyTasks(tasks.map(t => ({ when: new Date(t.when).getTime(), id: t._id, task: t.data })));
