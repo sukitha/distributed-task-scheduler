@@ -4,18 +4,18 @@ import { sleep } from '../utils/sleep';
 import { unitOfWorkFactory } from '../utils/middlewares/unitOfWorkHandler';
 import { Repo } from '../repositories/RepoNames';
 import { TaskStatus } from '../models/ITask';
-
 import loggerFactory from '../utils/logging';
 import { getDayBoundariesMs, isToday } from '../utils/date';
 import { IUoW } from '../repositories/RepositoryFactory';
 import { InvalidRequestError } from '../exceptions';
+import { generateId } from '../utils/generateId';
 const logger = loggerFactory.getLogger('TasksManager');
 
 export class TasksManager {
   private handlers = {
     publish_event: async (id: string, task: Task) => {
       await this.redis.deleteTaskAndPublish(id, task);
-      await this.updateTaskStatus(id, TaskStatus.processed);
+      if (id !== 'load_tasks_next_day') await this.updateTaskStatus(id, TaskStatus.processed);
     }
   }
 
@@ -54,9 +54,29 @@ export class TasksManager {
     });
     if (!tasks?.length) return;
 
-    const nextDay = tasks.find(t => t._id === 'load_tasks_next_day');
-    if (nextDay) await this.tasksRepo.updateToNextDay(nextDay._id, nextDay.when.getTime());
 
+    const nextDayTaskIdx = tasks.findIndex(t => t._id === 'load_tasks_next_day');
+    const nextDayTask = tasks[nextDayTaskIdx];
+    if (nextDayTask) {
+      const nextDayBoundaries = getDayBoundariesMs({ daysOffset: 1, baseDateMs: new Date(nextDayTask.when).getTime() });
+      const when = new Date(nextDayBoundaries.from);
+
+      tasks[nextDayTaskIdx] = {
+        status: TaskStatus.scheduled,
+        _id: nextDayTask._id,
+        when,
+        data: {
+          type: 'publish_event',
+          stream: 'scheduler_events',
+          event: {
+            name: SchedulerEvents.loadTasks,
+            time: when.getTime(),
+            v: '1.0.0',
+            data: nextDayBoundaries,
+          }
+        }
+      }
+    }
     logger.info('loaded tasks', JSON.stringify(tasks));
     await this.redis.addManyTasks(tasks.map(t => ({ when: new Date(t.when).getTime(), id: t._id, task: t.data })));
     const { length } = tasks;
