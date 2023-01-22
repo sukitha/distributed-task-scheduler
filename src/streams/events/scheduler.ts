@@ -15,7 +15,7 @@ export type IScheduledEvent<T = any> = IEvent<T> & { from?: { source: string; ta
 export type Task<T = any> = {
   type: 'publish_event' | 'api_call'; //TODO 
   stream: string;
-  event: IScheduledEvent<T>;
+  event: IEvent<T>;
 }
 
 export type ScheduleTaskData = {
@@ -23,7 +23,6 @@ export type ScheduleTaskData = {
   when: number;
   task: Task;
 };
-
 
 export type LoadTasksData = {
   from: number;
