@@ -8,14 +8,34 @@ import loggerFactory from '../utils/logging';
 import { getDayBoundariesMs, isToday } from '../utils/date';
 import { IUoW } from '../repositories/RepositoryFactory';
 import { InvalidRequestError } from '../exceptions';
-import { generateId } from '../utils/generateId';
 const logger = loggerFactory.getLogger('TasksManager');
 
 export class TasksManager {
   private handlers = {
     publish_event: async (id: string, task: Task) => {
-      await this.redis.deleteTaskAndPublish(id, task);
-      if (id !== 'load_tasks_next_day') await this.updateTaskStatus(id, TaskStatus.processed);
+      if (id === 'load_tasks') {
+        await this.redis.deleteTask(id);
+        const boundaries = task.event.data;
+        const nextDayBoundaries = getDayBoundariesMs({ daysOffset: 1, baseDateMs: new Date(boundaries.from).getTime() });
+        const when = new Date(nextDayBoundaries.from).getTime();
+
+        const nextDayTask: Task = {
+          type: 'publish_event',
+          stream: 'scheduler_events',
+          event: {
+            name: SchedulerEvents.loadTasks,
+            time: when,
+            v: '1.0.0',
+            data: nextDayBoundaries,
+          }
+        }
+        await this.redis.addTask(id, when, nextDayTask);
+        await this.redis.publishEvent(task.event);
+      }
+      else {
+        await this.redis.deleteTaskAndPublish(id, task);
+        await this.updateTaskStatus(id, TaskStatus.processed);
+      }
     }
   }
 
@@ -53,30 +73,6 @@ export class TasksManager {
       when: { $gte: new Date(from), $lte: new Date(to) }
     });
     if (!tasks?.length) return;
-
-
-    const nextDayTaskIdx = tasks.findIndex(t => t._id === 'load_tasks_next_day');
-    const nextDayTask = tasks[nextDayTaskIdx];
-    if (nextDayTask) {
-      const nextDayBoundaries = getDayBoundariesMs({ daysOffset: 1, baseDateMs: new Date(nextDayTask.when).getTime() });
-      const when = new Date(nextDayBoundaries.from);
-
-      tasks[nextDayTaskIdx] = {
-        status: TaskStatus.scheduled,
-        _id: nextDayTask._id,
-        when,
-        data: {
-          type: 'publish_event',
-          stream: 'scheduler_events',
-          event: {
-            name: SchedulerEvents.loadTasks,
-            time: when.getTime(),
-            v: '1.0.0',
-            data: nextDayBoundaries,
-          }
-        }
-      }
-    }
     logger.info('loaded tasks', JSON.stringify(tasks));
     await this.redis.addManyTasks(tasks.map(t => ({ when: new Date(t.when).getTime(), id: t._id, task: t.data })));
     const { length } = tasks;
@@ -99,7 +95,7 @@ export class TasksManager {
       stream: 'scheduler_events',
       event: {
         name: SchedulerEvents.loadTasks,
-        time: Date.now(),
+        time: executionTime,
         v: '1.0.0',
         data: boundaries,
       }
@@ -140,11 +136,8 @@ export const startTasksManager = async () => {
   const uow = await unitOfWorkFactory();
   const tasksManager = getTasksManager(uow);
 
-  const today = getDayBoundariesMs();
-  const nextDay = getDayBoundariesMs({ daysOffset: 1 });
-
-  await tasksManager.scheduleLoadTasksOperation({ id: 'load_tasks_now', executionTime: Date.now(), boundaries: today });
-  await tasksManager.scheduleLoadTasksOperation({ id: 'load_tasks_next_day', executionTime: nextDay.from, boundaries: nextDay });
+  const boundaries = getDayBoundariesMs();
+  await tasksManager.scheduleLoadTasksOperation({ id: 'load_tasks', executionTime: Date.now(), boundaries });
 
   tasksManager.processTasks();
   return {

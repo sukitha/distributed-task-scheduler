@@ -41,7 +41,7 @@ export class RedisHandler {
     }
   }
 
-  async publishEvent<T>(streamName: string, event: IEvent<T>) {
+  async publishEvent<T>(event: IEvent<T>, streamName = 'scheduler_events') {
     logger.info('publishEvent', JSON.stringify({ streamName, event }));
     await this.client.xadd(streamName, '*', event.name, JSON.stringify(event));
   }
